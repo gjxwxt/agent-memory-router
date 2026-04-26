@@ -1,50 +1,48 @@
 # Publishing Guide
 
-这个仓库适合以“纯技能仓库”的方式发布到 GitHub，不依赖额外脚本、数据库或 hooks。
+This repository is designed to be published as a lightweight skill repository on GitHub. It does not require extra scripts, databases, or hooks.
 
-## 发布前检查
+## Pre-Publish Checklist
 
-发布前建议确认下面几项：
+Before publishing, verify the following:
 
-1. 两个技能的 `SKILL.md` 都能独立阅读，不依赖你本地私有路径中的额外文档
-2. `rules-router` 和 `project-memory-init` 的职责边界清楚，没有互相抢活
-3. 仓库级 `README.md` 已说明安装方式、使用顺序、设计边界
-4. 如果准备开源，确认是否要补充 `LICENSE`
-5. 如果将来准备持续维护，确认仓库名、简介、标签是否清晰
+1. Each `SKILL.md` can be read on its own without depending on private local files
+2. `rules-router` and `project-memory-init` have clear boundaries and do not compete for the same job
+3. The repository-level `README.md` explains installation, usage flow, and design boundaries
+4. The license is present and matches your publishing intent
+5. The repository name, short description, and topics are clear enough for GitHub readers
 
-## 推荐仓库名
+## Recommended Repository Naming
 
-可选名称例如：
+Examples:
 
+- `agent-memory-router`
 - `codex-memory-routing-skills`
 - `project-memory-skills`
-- `codex-rules-router`
 
-当前本地目录使用的是：
+Current local path:
 
 `F:\F-code\infor\codex-memory-routing-skills`
 
-## 本地初始化 Git
+## Local Git Setup
 
-在仓库目录执行：
+If you are starting from scratch:
 
 ```powershell
 cd F:\F-code\infor\codex-memory-routing-skills
 git init
 git add .
-git commit -m "feat: add rules-router and project-memory-init skills"
+git commit -m "feat: add memory routing skills"
 ```
 
-## 在 GitHub 创建仓库
+## Create the GitHub Repository
 
-1. 打开 GitHub，新建一个空仓库
-2. 仓库名建议与本地目录保持一致
-3. 是否公开按你的需求决定
-4. 如果本地已经有 `README.md`，创建远端仓库时不要再勾选初始化 README
+1. Create an empty repository on GitHub
+2. Prefer using the same name as your local project
+3. Choose public or private according to your sharing goal
+4. If your local repository already has a `README.md`, do not initialize the remote with a new README
 
-## 连接远端并推送
-
-创建好远端后执行：
+## Connect and Push
 
 ```powershell
 cd F:\F-code\infor\codex-memory-routing-skills
@@ -53,38 +51,38 @@ git branch -M main
 git push -u origin main
 ```
 
-示例远端地址：
+Example remote URLs:
 
-- `https://github.com/<your-name>/codex-memory-routing-skills.git`
-- `git@github.com:<your-name>/codex-memory-routing-skills.git`
+- `https://github.com/<your-name>/agent-memory-router.git`
+- `git@github.com:<your-name>/agent-memory-router.git`
 
-## 首次发布后建议补充
+## Recommended First Release
 
-如果你准备把它做成长期维护项目，建议后续再补这些内容：
-
-- `LICENSE`
-- Release tag
-- 示例 issue 模板
-- 变更记录
-- 更贴近真实使用的 eval prompts
-
-## 版本建议
-
-如果你准备快速收集反馈，可以先从：
+If you want fast feedback, start with:
 
 `v0.1.0`
 
-开始，强调这是可用但仍在迭代中的第一版。
+That communicates “usable, but still learning from real-world workflows.”
 
-## 维护建议
+## Good Follow-Ups After First Publish
 
-发布后最值得持续观察的是：
+If you decide to maintain this repository long-term, these are good next additions:
 
-- `rules-router` 的 generic mode 是否足够轻
-- memory-ready 的判定是否过严或过松
-- capability -> skill -> fallback 的实际命中是否顺手
-- `lessons` 的 type 和升级规则是否真的能减轻记忆膨胀
+- changelog
+- issue templates
+- realistic eval prompts
+- examples of typed `lessons.md`
+- examples of `generic mode` versus `memory mode`
 
-## 一句话发布策略
+## Maintenance Questions Worth Watching
 
-先把它作为“可用的工作流草案”发出去，比等到它变成“完美系统”更容易得到高质量反馈。
+The most useful things to monitor after publishing are:
+
+- whether `generic mode` stays lightweight enough
+- whether the `memory-ready` gate is too strict or too loose
+- whether capability -> skill -> fallback resolution feels natural
+- whether lesson typing and lesson-to-rule upgrades actually keep memory clean
+
+## One-Line Publishing Strategy
+
+Ship a clear working draft first. Real usage feedback will improve these skills faster than waiting for a “perfect” memory framework.

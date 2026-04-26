@@ -1,49 +1,58 @@
-# Codex Memory Routing Skills
+# Agent Memory Router
 
-一组面向 Codex / Claude Code 工作流的轻量技能，目标不是做“全自动黑盒记忆”，而是提供一套可审计、可版本化、可回退的项目记忆与任务路由机制。
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-当前仓库包含两个技能：
+Lightweight skills for Codex / Claude Code style workflows that separate task routing from project memory structure.
+
+This repository is not trying to build a fully automatic memory system. It is designed for teams and solo developers who want a memory workflow that is:
+
+- inspectable
+- versionable
+- predictable
+- easy to adopt incrementally
+
+## Included Skills
 
 - [`rules-router`](./skills/rules-router/SKILL.md)
 - [`project-memory-init`](./skills/project-memory-init/SKILL.md)
 
-## 为什么做这两个技能
+## Why These Skills Exist
 
-很多项目并不需要复杂的项目记忆结构，但几乎所有项目都需要“开始做事前先判断读什么、跳过什么、下一步交给谁”。
+Many projects do not need a full memory stack, but almost every project benefits from a reliable way to decide:
 
-这套技能把问题拆成两层：
+- what context to load
+- what context to skip
+- what workflow should take over next
+- where new knowledge should be written back
+
+This repository splits those concerns into two layers:
 
 - `rules-router`
-  - 负责任务起手式路由
-  - 判断复杂度、意图、上下文预算、是否启用项目记忆模式
-  - 优先按 capability 路由，再解析成已安装 skill 或内置 fallback
+  - routes work before execution starts
+  - classifies intent, complexity, context budget, and memory readiness
+  - resolves a capability first, then maps it to an installed skill or a built-in fallback
 
 - `project-memory-init`
-  - 负责项目记忆结构本身
-  - 处理初始化、修复、恢复、结构审计
-  - 不替代普通任务路由
+  - initializes, repairs, resumes, or audits project memory structure
+  - helps teams separate task state, lessons, long-term knowledge, and stable rules
+  - does not replace ordinary day-to-day task routing
 
-这套设计和自动记忆方案不是同一个方向。它更强调：
+## Core Design Principles
 
-- 可控
-- 可解释
-- 可回溯
-- 可以按项目决定是否启用
+- Load the smallest context set that supports a correct next step
+- Do not assume every project needs memory-aware routing
+- Prefer capability routing over hardcoded skill names
+- Fall back gracefully when a preferred skill is not installed
+- Keep task state, lessons, knowledge, and rules in separate lanes
 
-## 设计原则
-
-- 默认最小上下文，不预加载全部文档
-- 没有项目记忆结构时，只启用 generic routing
-- capability 优先，skill 名其次
-- 缺少 skill 时不阻塞任务，退回 built-in fallback
-- task state、lessons、knowledge、rules 明确分层
-
-## 仓库结构
+## Repository Layout
 
 ```text
-codex-memory-routing-skills/
-├── README.md
+agent-memory-router/
+├── LICENSE
 ├── PUBLISHING.md
+├── README.md
+├── README.zh-CN.md
 └── skills/
     ├── project-memory-init/
     │   └── SKILL.md
@@ -51,102 +60,108 @@ codex-memory-routing-skills/
         └── SKILL.md
 ```
 
-## 技能关系
+## How the Two Skills Work Together
 
 ### `rules-router`
 
-适合这些场景：
+Use it when you need to decide:
 
-- 进入任务前，不确定该加载哪些规则或项目文档
-- 需要判断是 coding、bugfix、review、docs 还是 brainstorming
-- 需要判断项目是否已经初始化记忆结构
-- 用户说“记住这个”“以后按这个来”，需要判断写回位置
-- 某个偏好 skill 没安装，仍要继续完成路由
+- which rules or docs to read before starting work
+- whether the task is coding, bugfix, review, docs, or brainstorming
+- whether project memory is initialized enough to participate in memory-aware routing
+- where to store a new correction, lesson, rule, or long-term fact
+- how to continue when a preferred skill is missing
 
-它有两种模式：
+It operates in two modes:
 
 - `generic mode`
-  - 项目尚未建立记忆分层时使用
+  - for projects that do not yet have the expected memory structure
 - `memory mode`
-  - 只有在 `AGENTS.md`、`tasks/index.md`、`tasks/todo.md`、`tasks/lessons.md`、`tasks/knowledge.md` 都齐备时才启用
+  - only after the project has `AGENTS.md`, `tasks/index.md`, `tasks/todo.md`, `tasks/lessons.md`, and `tasks/knowledge.md`
 
 ### `project-memory-init`
 
-适合这些场景：
+Use it when the memory structure itself is the problem:
 
-- 第一次进入一个仓库
-- 项目记忆结构缺失或混乱
-- 长时间后回到项目，需要恢复上下文
-- 想把经验、任务状态、长期知识分层清楚
+- first time in a repository
+- missing or unreliable project memory
+- resuming after context loss
+- repairing drift between rules, task state, lessons, and knowledge
 
-它包含四种模式：
+It supports four modes:
 
 - `scan`
 - `bootstrap`
 - `resume`
 - `repair`
 
-## 安装方式
+## Installation
 
-把 `skills/` 下的技能目录复制到你的 skill 搜索路径中即可。常见位置例如：
+Copy the two skill folders into your local skill search path.
+
+Common locations include:
 
 - `~/.agents/skills/`
 - `~/.codex/skills/`
 
-示例：
+Example:
 
 ```powershell
 Copy-Item .\skills\rules-router "$HOME\.agents\skills\rules-router" -Recurse -Force
 Copy-Item .\skills\project-memory-init "$HOME\.agents\skills\project-memory-init" -Recurse -Force
 ```
 
-如果你使用的是其他 skill 目录约定，把两个子目录放到对应位置即可。
+If your environment uses a different skill directory convention, copy the two subdirectories to the equivalent location.
 
-## 推荐使用顺序
+## Recommended Usage Flow
 
-1. 新项目或陌生仓库：
-   先用 `rules-router` 判断是否只需 generic routing，或者是否要手动运行 `project-memory-init`
-2. 项目尚未初始化记忆结构：
-   使用 `project-memory-init` 的 `scan` 或 `bootstrap`
-3. 项目结构已经稳定：
-   由 `rules-router` 接管后续日常路由
-4. 项目中途出现规则冲突、知识和任务状态混写：
-   使用 `project-memory-init` 的 `repair`
+1. Enter a new or unfamiliar repository
+   - start with `rules-router`
+   - decide whether `generic mode` is enough or whether to run `project-memory-init`
+2. The project does not yet have memory structure
+   - use `project-memory-init` with `scan` or `bootstrap`
+3. The project now has a stable structure
+   - let `rules-router` handle daily routing
+4. The structure starts drifting
+   - use `project-memory-init` with `repair`
 
-## 写回分层约定
+## Shared Write-Back Taxonomy
 
-两个技能共享同一套写回分类：
+Both skills use the same write-back categories:
 
 - `session-only`
 - `tasks/todo.md`
 - `tasks/lessons.md`
 - `tasks/knowledge.md`
-- `AGENTS.md` 或稳定项目规则，如 `docs/rules.md`
+- `AGENTS.md` or stable project rules such as `docs/rules.md`
 
-核心原则：
+Guiding rules:
 
-- 事实进 `tasks/knowledge.md`
-- 行为约束进 `tasks/lessons.md` 或稳定规则
-- 始终生效的工作方式进 `AGENTS.md` 或稳定规则
-- 任务状态只进 `tasks/todo.md`
+- facts go to `tasks/knowledge.md`
+- behavior constraints go to `tasks/lessons.md` or stable rules
+- always-on workflow behavior belongs in `AGENTS.md` or stable rules
+- task-local execution state stays in `tasks/todo.md`
 
-## 适合谁
+## Who This Is For
 
-这套技能更适合：
+This repository is a good fit for:
 
-- 有明确协作规范的工程团队
-- 需要长期维护项目规则、组件规范、质量门禁的仓库
-- 更看重“为什么读这些上下文”和“为什么写到这里”的工作流
+- engineering teams with explicit collaboration rules
+- projects with long-lived component standards, quality gates, or shared conventions
+- people who care about why a context source was loaded and why a piece of information was written back
 
-如果你追求的是全自动、无感知、语义检索优先的记忆系统，这套技能可能不是最省事的选择。
+If you want a fully automatic memory layer with semantic retrieval and minimal human involvement, this repository is intentionally not optimized for that model.
 
-## 反馈与迭代
+## Feedback That Matters Most
 
-这两个技能是按真实开发使用场景设计的，最有价值的反馈通常来自：
+The most useful real-world feedback usually looks like this:
 
-- 哪些路由判断太重了
-- 哪些写回分类还容易混淆
-- 哪些 fallback 规则不够顺手
-- 哪些项目其实不需要启用 memory mode
+- routing feels too heavy
+- write-back categories are still confusing
+- fallback behavior is not smooth enough
+- some projects should stay in `generic mode` longer
+- lesson-to-rule upgrades are either too eager or too conservative
 
-欢迎基于实际使用继续迭代。
+## License
+
+This repository is released under the [MIT License](./LICENSE).
