@@ -52,7 +52,6 @@
 ```text
 agent-memory-router/
 ├── LICENSE
-├── PUBLISHING.md
 ├── README.md
 ├── README.zh-CN.md
 └── skills/
@@ -99,7 +98,32 @@ agent-memory-router/
 
 ## 安装方式
 
-把两个 skill 目录复制到本地 skill 搜索路径即可。
+这个仓库不是 npm 包，也没有提供 `npx install` 这种安装方式。
+
+更推荐的安装方式，是通过环境内置的 `skill-installer`，从 GitHub 仓库路径安装。
+
+### 推荐方式：从 GitHub repo/path 安装
+
+如果你的 Codex 环境支持内置的 `skill-installer`，可以从下面这个仓库路径安装：
+
+- 仓库：`gjxwxt/agent-memory-router`
+- 路径：
+  - `skills/rules-router`
+  - `skills/project-memory-init`
+
+如果你的环境支持直接传 GitHub URL，也可以直接使用每个 skill 的仓库路径。
+
+如果你的环境暴露了底层安装脚本，对应形式大致是：
+
+```bash
+scripts/install-skill-from-github.py --repo gjxwxt/agent-memory-router --path skills/rules-router --path skills/project-memory-init
+```
+
+安装完成后，如果你的环境需要重启，重启 Codex 以加载新技能。
+
+### 兜底方式：手动复制安装
+
+如果当前环境不支持从 GitHub 安装，再把两个 skill 目录手动复制到本地 skill 搜索路径。
 
 常见位置例如：
 

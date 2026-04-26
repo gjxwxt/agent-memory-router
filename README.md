@@ -50,7 +50,6 @@ This repository splits those concerns into two layers:
 ```text
 agent-memory-router/
 ├── LICENSE
-├── PUBLISHING.md
 ├── README.md
 ├── README.zh-CN.md
 └── skills/
@@ -97,7 +96,32 @@ It supports four modes:
 
 ## Installation
 
-Copy the two skill folders into your local skill search path.
+This repository is not published as an npm package and does not provide an `npx install` flow.
+
+The recommended installation path is GitHub-based skill installation through your environment's built-in skill installer.
+
+### Recommended: install from GitHub repo/path
+
+If your Codex environment supports the built-in `skill-installer`, install from this repository's GitHub paths:
+
+- repository: `gjxwxt/agent-memory-router`
+- paths:
+  - `skills/rules-router`
+  - `skills/project-memory-init`
+
+If your environment accepts GitHub URLs directly, use the repository paths for each skill.
+
+If your environment exposes the underlying helper script, the equivalent form is:
+
+```bash
+scripts/install-skill-from-github.py --repo gjxwxt/agent-memory-router --path skills/rules-router --path skills/project-memory-init
+```
+
+After installation, restart Codex if your environment requires a restart to pick up newly installed skills.
+
+### Fallback: install manually
+
+If GitHub-based installation is not available, copy the two skill folders into your local skill search path.
 
 Common locations include:
 
