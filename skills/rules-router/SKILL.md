@@ -69,6 +69,10 @@ If the user explicitly wants project memory and the structure is missing:
 - use `scan` when a structure may exist but is unclear
 - use `bootstrap` when the structure does not exist yet
 
+Note: root `AGENTS.md` is still a normal project instruction entrypoint even in `generic mode`.
+The gate only controls whether `tasks/*` memory files participate in memory-aware routing.
+Codex projects should always read root `AGENTS.md` on startup, regardless of memory-ready status.
+
 ## Routing Flow
 
 ### 1. Respect active instructions first
@@ -85,7 +89,7 @@ Apply in this order:
 
 Start with the smallest index available:
 
-- global: `C:\Users\gaoji\.codex\rules\INDEX.md`
+- global: `~/.codex/AGENTS.md` (root entry, routes to `~/.codex/rules/INDEX.md` when needed)
 - project: root `AGENTS.md` if present
 
 Read more only when the task warrants it.
@@ -125,9 +129,43 @@ If the task touches public API, component behavior, tests/Storybook/docs synchro
 
 ### 6. Decide what extra context to load
 
+#### Context Budget by Complexity
+
+Before consulting the decision table below, set a hard budget based on task complexity.
+
+**Simple task**:
+- Must read: root `AGENTS.md`
+- Optional: nothing
+- Skip: all `tasks/*`, all `docs/*`
+- Write-back: none or session-only
+
+**Medium task**:
+- Must read: root `AGENTS.md` + `tasks/index.md`
+- Optional (read only if relevant):
+  - `tasks/lessons.md` — when user correction or repeated pitfall is involved
+  - `tasks/knowledge.md` — when architecture or domain context matters
+- Skip: `tasks/todo.md` (unless multi-step tracking is explicitly needed)
+- Write-back: lessons or knowledge (with confirmation)
+
+**Complex task**:
+- Must read: root `AGENTS.md` + `tasks/index.md` + `tasks/knowledge.md`
+- Optional (read by type):
+  - `tasks/lessons.md` → only `gotcha` and `problem-solution` types
+  - `docs/rules.md` → if component-library, release, or verification is involved
+- Conditional:
+  - `tasks/todo.md` → only if resuming a multi-step task with prior state
+- Write-back: lessons, knowledge, or rules (with confirmation)
+
+**Memory-maintain task**:
+- Must read: full memory structure
+- Execute: `scan` / `bootstrap` / `resume` / `repair`
+- Write-back: per `project-memory-init` recommendations
+
+After setting the budget, use the decision table below to refine which optional files are worth loading within that budget.
+
 In `generic mode`, stop after the minimum context unless the user explicitly asks for deeper project inspection.
 
-In `memory mode`, use this decision table:
+In `memory mode`, use this decision table. The table below refines the optional reads within the budget above. When a table entry says "read X", first check whether X falls within your current complexity budget. If it is outside the budget, skip it unless the user explicitly requests it.
 
 - Always:
   - root `AGENTS.md`
@@ -195,6 +233,72 @@ Built-in fallback behavior should stay simple:
 
 ### 9. Decide write-back destination
 
+#### Step 0: Classify Scope
+
+Before choosing a file, determine the scope of the instruction.
+
+Determine scope by **lifetime first**, **content type second**, and **user wording third**.
+Keywords are strong hints, not the only signal.
+
+**Scope by lifetime**:
+
+| Lifetime | Scope | Examples |
+|----------|-------|----------|
+| This conversation only | session-only | "这次先这样做", "临时绕过", one-off experiment |
+| This project, all future sessions | project | architecture decisions, domain knowledge, project-specific rules |
+| All projects, all future work | global | coding style, communication preferences, toolchain habits |
+
+**Scope by content type** (use to disambiguate when lifetime is unclear):
+
+| Content type | Likely scope |
+|--------------|--------------|
+| Temporary task state | session-only |
+| Project fact or constraint | project |
+| Reusable behavior rule | project or global |
+| Personal working preference | global |
+| One-off correction about this code | project (knowledge) |
+| One-off correction about how YOU work | project (lessons) or global |
+
+**Keyword hints** (use as tiebreakers, not primary signals):
+
+| Phrase | Hint |
+|--------|------|
+| "这次", "临时", "先" | session-only |
+| "这个项目", "以后", "记住" | project |
+| "所有项目", "全局", "always" | global |
+
+**Decision flow**:
+1. Is this temporary or one-off? → session-only
+2. Does this apply to the current project long-term? → project
+3. Does this apply across all projects? → global
+4. Unclear? → default to project scope, ask to confirm
+
+**Scope-to-destination mapping**:
+
+| Scope | Destination |
+|-------|-------------|
+| session-only | do not write (keep in conversation) |
+| project | `tasks/lessons.md`, `tasks/knowledge.md`, `AGENTS.md`, or `docs/rules.md` |
+| global | `~/.codex/AGENTS.md` (always-on defaults) or `~/.codex/rules/*.md` (categorized rules) |
+
+Note: `~/.codex/rules/INDEX.md` is a routing index only, not a rule body container. Update it when new global categories are added, but never store rule content there.
+
+After scope classification, proceed to the file taxonomy below.
+
+#### Full Write-Back Flow
+
+When a write-back is needed, follow this order:
+
+1. **Classify scope** (Step 0 above): session / project / global
+2. **Classify type / destination** (file taxonomy below): lessons / knowledge / rules / todo
+3. **Apply Write-Back Gate** (below): 5-question check
+4. **Check conflicts** (Conflict Protocol): hard / soft / scope
+5. **Suggest or write** (Auto-Suggest Triggers): only after user confirmation
+
+Do not skip steps. Scope must be determined before destination.
+
+#### File Taxonomy
+
 Use this canonical taxonomy in both routing and memory skills:
 
 - `session-only`:
@@ -214,6 +318,36 @@ If something overlaps:
 - behavior constraints go to `tasks/lessons.md` or stable project rules
 - always-on behavior belongs in `AGENTS.md` or stable project rules
 - task-local status stays in `tasks/todo.md`
+
+#### Auto-Suggest Triggers (NOT Auto-Write)
+
+Detect these situations during work and **suggest** a write-back. Never write without user confirmation.
+
+**Suggest `tasks/lessons.md`** when:
+- User says "记住这个", "下次注意", "别再犯", "remember this"
+- The same correction appears for the second time
+- A repeated pitfall is identified during review or debugging
+
+**Suggest `tasks/knowledge.md`** when:
+- An architecture decision is finalized
+- A core project constraint is discovered or confirmed
+- A domain term or business logic is confirmed and likely reusable across future tasks
+
+**Suggest `AGENTS.md` or stable project rules** when:
+- User says "以后都这样做", "这是规则", "always do this"
+- A stable routing pattern is confirmed across multiple tasks
+- An always-on behavior constraint is identified
+
+**Execution flow**:
+1. Detect trigger condition
+2. Output suggestion: `建议写回：tasks/lessons.md（类型：gotcha）—— [一句话描述原因]`
+3. Wait for user confirmation: Y / N / change destination
+4. Only write after user confirms
+
+**Prohibited**:
+- Never write automatically without user confirmation
+- Never present a suggestion as if it has already been written
+- Never skip classification and write directly to a file
 
 ## Write-Back Gate
 
@@ -241,6 +375,53 @@ Treat conflicts as:
 - `hard conflict`: old and new cannot both be true
 - `soft conflict`: new rule narrows an existing one
 - `scope conflict`: content is fine but destination is wrong
+
+## Cross-Session Consistency
+
+All sessions read and write the same project files. This system relies on file-level discipline, not real-time sync.
+
+**Before writing to any project memory file**:
+1. Re-read the target file if it may have changed due to other sessions or recent edits
+2. If the content no longer matches your earlier understanding, re-classify before writing
+3. If your write conflicts with recent additions, ask the user to choose
+
+**When resuming after other sessions may have worked**:
+1. Run `resume` logic: read AGENTS.md → tasks/index.md → tasks/todo.md → tasks/lessons.md → tasks/knowledge.md
+2. Treat any file that changed since your last read as potentially stale in your local understanding
+3. Do not assume your prior context is still valid
+
+**What this system does NOT do** (be honest about capability boundaries):
+- No real-time file watching (files are read on session start, not continuously monitored)
+- No automatic diff detection (no "this file changed since you last read it" system capability)
+- No file locking (two sessions can write simultaneously)
+- No merge conflict detection (Git handles this at commit time)
+
+The "re-read before writing" rule is a behavioral norm, not a system-guaranteed capability.
+
+## Scope Promotion
+
+When a rule or lesson applies beyond the current project, consider promoting it to global scope.
+
+**Promotion triggers** (user-confirmed, not auto-detected):
+- User explicitly says "所有项目", "always", "全局", "所有项目都这样做"
+- User confirms they have repeated this same rule across multiple projects
+- A project rule is later recognized as a personal default working preference
+
+**Promotion flow**:
+1. Classify the candidate: is it truly global, or just broadly applicable within this project?
+2. Check existing global rules in `~/.codex/AGENTS.md` or `~/.codex/rules/` for conflicts
+3. If conflict exists, ask user to choose: overwrite, keep as project exception, or merge
+4. Only write to global after confirmation
+5. If a new global category is needed, update `~/.codex/rules/INDEX.md` as an index, not as rule body
+
+**Demotion** (global → project):
+- If a global rule doesn't apply to a specific project, create a project-level exception in `AGENTS.md`
+- Do not modify global rules to accommodate project-specific needs
+
+**What this system does NOT do**:
+- No automatic promotion (requires user confirmation)
+- No cross-project scanning (you only see the current project)
+- No global rule versioning (Git handles this)
 
 ## Output Contract
 
@@ -288,3 +469,9 @@ Use these only when they add signal:
 - Do not perform implementation and review at the same time unless the user explicitly wants both.
 - Do not write new rules when a session-only constraint is enough.
 - Do not hardcode capability routing to a named skill when built-in fallback is sufficient.
+- Do not auto-write memory without user confirmation, even when auto-suggest triggers fire.
+- Do not load optional context beyond the current complexity budget unless the user explicitly requests it.
+- Do not skip scope classification and jump directly to file selection.
+- Do not promote project-level rules to global without explicit user confirmation.
+- Do not assume file change detection is a system capability; treat "re-read before writing" as a behavioral norm.
+- Do not use keyword matching as the sole scope signal; prioritize lifetime and content type.

@@ -53,9 +53,11 @@ By default, treat a project as `memory-ready` only when all of these exist:
 
 Until that structure exists, `rules-router` should stay in `generic mode`.
 
+Daily logs (Layer 5) are optional and do not affect memory-ready status.
+
 ## Memory Model
 
-Treat project memory as four layers:
+Treat project memory as four core layers plus one optional fifth layer:
 
 ### Layer 1: Entry
 
@@ -90,6 +92,47 @@ This layer stores architecture, domain constraints, long-lived decisions, and st
 Distinguish within this layer:
 - `tasks/knowledge.md`: facts, decisions, and durable operational knowledge
 - stable project rules such as `docs/rules.md`: always-on constraints and process rules
+
+### Layer 5: Daily Logs (Optional)
+
+Files that track daily work and learnings:
+- `tasks/daily/YYYY-MM-DD.md`
+
+This layer is **optional** and should NOT be required for memory-ready status.
+
+Purpose:
+- help `resume` mode reconstruct recent context
+- provide a lightweight reflection habit
+- separate "what happened recently" from long-term memory
+
+Structure:
+```markdown
+# YYYY-MM-DD
+
+## 完成了什么
+- [task or milestone]
+
+## 学到了什么
+- 建议写回：[lessons/knowledge] — [reason]
+
+## 明天要做什么
+- [next step]
+```
+
+When to create:
+- only if the user explicitly wants daily tracking
+- or after 3+ sessions of context loss where recent history would have helped
+
+When to skip:
+- if the user prefers lightweight approach
+- if the project is short-lived
+- if memory-ready is being evaluated (daily logs are not part of the definition)
+
+Guardrails for Daily Logs:
+- Daily logs are NOT a second `tasks/todo.md`; do not put task tracking here
+- Daily logs are NOT a substitute for `tasks/lessons.md` or `tasks/knowledge.md`; use them only for "what happened today" summaries
+- Do not auto-create daily log files; only create when the user explicitly wants daily tracking
+- Daily logs should be short (5-10 lines max); if they grow longer, extract reusable items into lessons/knowledge
 
 ## Operating Modes
 
@@ -141,9 +184,13 @@ Write behavior:
 
 Read order:
 1. `AGENTS.md`
-2. `tasks/todo.md`
-3. `tasks/lessons.md` if there were prior corrections
-4. `tasks/knowledge.md` if architecture/domain context matters
+2. `tasks/index.md`
+3. `tasks/todo.md`
+4. `tasks/lessons.md` if there were prior corrections
+5. `tasks/knowledge.md` if architecture/domain context matters
+
+For `resume`, `tasks/index.md` is part of the default read order, not an optional escalation.
+The index is needed to understand what knowledge and lessons exist before deciding which ones to load.
 
 ### `repair`
 
